@@ -1,0 +1,13 @@
+name = "bot-ai-telegram"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# Binding AI
+[ai]
+binding = "AI"
+
+# Binding Database D1
+[[d1_databases]]
+binding = "DB"
+database_name = "prod-ai-db"
+database_id = "81898725-cb34-4d9f-9198-8c529da15116"
