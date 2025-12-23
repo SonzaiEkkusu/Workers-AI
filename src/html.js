@@ -67,10 +67,9 @@ export const htmlContent = `
         .content { line-height: 1.6; font-size: 0.95rem; word-wrap: break-word; }
         .content p { margin-top: 0; margin-bottom: 10px; }
         .content p:last-child { margin-bottom: 0; }
-        .content table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; margin: 10px 0; }
-        .content th, .content td { border: 1px solid #444; padding: 6px; font-size: 0.9rem; }
-        .content pre { background: #0d1117; padding: 10px; border-radius: 8px; overflow-x: auto; margin: 10px 0; max-width: 100%; position: relative; }
+        .content img { max-width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #444; }
         
+        .content pre { background: #0d1117; padding: 10px; border-radius: 8px; overflow-x: auto; margin: 10px 0; max-width: 100%; position: relative; }
         .copy-btn { position: absolute; top: 5px; right: 5px; background: #21262d; border: 1px solid #30363d; color: #c9d1d9; border-radius: 5px; padding: 4px 8px; font-size: 0.7rem; cursor: pointer; opacity: 0.7; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
         .copy-btn:hover { opacity: 1; background: #30363d; }
         
@@ -78,10 +77,47 @@ export const htmlContent = `
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
         .input-area { padding: 10px 15px; background: var(--bg-main); border-top: 1px solid #333; flex-shrink: 0; }
-        .input-container { background: var(--bg-input); border-radius: 20px; padding: 8px 15px; display: flex; align-items: flex-end; gap: 10px; border: 1px solid #444; }
+        .input-container { background: var(--bg-input); border-radius: 20px; padding: 8px 15px; display: flex; align-items: flex-end; gap: 10px; border: 1px solid #444; position: relative; }
         textarea { width: 100%; background: transparent; border: none; color: white; resize: none; font-family: inherit; font-size: 1rem; max-height: 120px; height: 24px; padding: 5px 0; outline: none; }
         .send-btn { background: var(--accent); border: none; border-radius: 50%; width: 35px; height: 35px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .send-btn:disabled { background: #444; }
+        
+        /* MODEL SELECTOR */
+        .model-select {
+            background: transparent;
+            color: #aaa;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+            margin-right: 5px;
+            transition: color 0.3s;
+        }
+        .model-select:hover { color: white; }
+        .model-dropdown {
+            position: absolute;
+            bottom: 60px;
+            left: 10px;
+            background: #252525;
+            border: 1px solid #444;
+            border-radius: 8px;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            width: 150px;
+            z-index: 100;
+        }
+        .model-dropdown.show { display: flex; }
+        .model-option {
+            padding: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        .model-option:hover { background: #333; color: white; }
+        .model-option.active { background: var(--accent); color: white; }
 
         @media (max-width: 768px) {
             aside { position: absolute; height: 100%; width: 280px; transform: translateX(-100%); box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
@@ -125,12 +161,24 @@ export const htmlContent = `
             </button>
             <div id="chat-box">
                 <div style="text-align: center; margin-top: 20vh; color: #555;">
-                    <h2>gpt-oss-120b</h2>
-                    <p>High Reasoning Model • D1 Database</p>
+                    <h2>AI Workspace</h2>
+                    <p>GPT-120B • FLUX.2 • D1 Database</p>
                 </div>
             </div>
             <div class="input-area">
                 <div class="input-container">
+                    <button class="model-select" onclick="toggleModelDropdown()" title="Pilih Model">
+                        <i id="current-model-icon" class="fas fa-comment-alt"></i>
+                    </button>
+                    <div id="model-dropdown" class="model-dropdown">
+                        <div class="model-option active" onclick="selectModel('text')">
+                            <i class="fas fa-comment-alt"></i> Chat
+                        </div>
+                        <div class="model-option" onclick="selectModel('image')">
+                            <i class="fas fa-image"></i> Image
+                        </div>
+                    </div>
+
                     <textarea id="user-input" placeholder="Ketik pesan..." rows="1" oninput="resizeTextarea(this)"></textarea>
                     <button id="send-btn" class="send-btn" onclick="sendMessage()"><i class="fas fa-arrow-up"></i></button>
                 </div>
@@ -148,6 +196,33 @@ export const htmlContent = `
     }
     let currentUser = initialUser;
     let currentSessionId = initialSession;
+    let currentModel = 'text'; // 'text' or 'image'
+
+    // --- MODEL SELECTOR LOGIC ---
+    function toggleModelDropdown() {
+        document.getElementById('model-dropdown').classList.toggle('show');
+    }
+    function selectModel(type) {
+        currentModel = type;
+        const icon = type === 'text' ? 'fas fa-comment-alt' : 'fas fa-image';
+        document.getElementById('current-model-icon').className = icon;
+        
+        // Update Active Class
+        document.querySelectorAll('.model-option').forEach(el => el.classList.remove('active'));
+        if(type === 'text') document.querySelectorAll('.model-option')[0].classList.add('active');
+        else document.querySelectorAll('.model-option')[1].classList.add('active');
+
+        // Update Placeholder
+        document.getElementById('user-input').placeholder = type === 'text' ? "Ketik pesan..." : "Deskripsikan gambar...";
+        
+        document.getElementById('model-dropdown').classList.remove('show');
+    }
+    // Close dropdown if clicked outside
+    window.onclick = function(event) {
+        if (!event.target.matches('.model-select') && !event.target.matches('.model-select *')) {
+            document.getElementById('model-dropdown').classList.remove('show');
+        }
+    }
 
     function resizeTextarea(el) { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; if(el.value === '') el.style.height = '24px'; }
     function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open'); }
@@ -235,7 +310,7 @@ export const htmlContent = `
         document.getElementById("chat-box").innerHTML = \`
             <div style="text-align: center; margin-top: 20vh; color: #555;">
                 <h2>gpt-oss-120b</h2>
-                <p>Mulai percakapan baru...</p>
+                <p>High Reasoning Model • D1 Database</p>
             </div>\`;
         if(updateUrl && currentUser) { window.history.pushState({}, '', \`/\${currentUser}\`); updateSidebarActive(); closeSidebar(); }
     }
@@ -244,17 +319,30 @@ export const htmlContent = `
     const userInput = document.getElementById("user-input");
     userInput.addEventListener("keydown", function(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
 
-    // --- PARSING THOUGHT ---
+    // --- PARSING ---
     function parseMessageContent(text) {
         const thoughtRegex = /\\[(THOUGHT|OUGHT|REASONING)\\]([\\s\\S]*?)\\[\\/\\1\\]/i;
-        const match = text.match(thoughtRegex);
+        const imageRegex = /\\[GENERATED_IMAGE\\]([\\s\\S]*?)\\[\\/GENERATED_IMAGE\\]/i;
         
-        if (match) {
-            const thought = match[2].trim(); 
-            const actualMessage = text.replace(thoughtRegex, "").trim(); 
-            return { thought, actualMessage };
+        let thought = null;
+        let image = null;
+        let actualMessage = text;
+
+        // Extract Thought
+        const thoughtMatch = text.match(thoughtRegex);
+        if (thoughtMatch) {
+            thought = thoughtMatch[2].trim();
+            actualMessage = actualMessage.replace(thoughtRegex, "").trim();
         }
-        return { thought: null, actualMessage: text };
+
+        // Extract Image
+        const imageMatch = text.match(imageRegex);
+        if (imageMatch) {
+            image = imageMatch[1].trim(); // Base64 data
+            actualMessage = actualMessage.replace(imageRegex, "").trim();
+        }
+
+        return { thought, image, actualMessage };
     }
 
     function appendMessage(role, text, useTypingEffect = false, duration = 0) {
@@ -267,16 +355,25 @@ export const htmlContent = `
         const avatar = role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
         let metaHtml = (role === 'ai' && duration > 0) ? \`<div class="meta-info"><i class="fas fa-stopwatch"></i> \${duration}s</div>\` : "";
 
-        const { thought, actualMessage } = parseMessageContent(text);
+        // Parse content
+        const { thought, image, actualMessage } = parseMessageContent(text);
         let thoughtHtml = "";
+        let imageHtml = "";
         
         if (thought) {
             thoughtHtml = \`
                 <details class="thought-box">
                     <summary class="thought-summary">Reasoning Process</summary>
                     <div class="thought-content">\${marked.parse(thought)}</div>
-                </details>
-            \`;
+                </details>\`;
+        }
+
+        if (image) {
+            imageHtml = \`
+                <div>
+                    <img src="\${image}" alt="Generated Image">
+                    <br><a href="\${image}" download="flux-image.png" style="font-size:0.8rem; color:#aaa; text-decoration:none;"><i class="fas fa-download"></i> Download Image</a>
+                </div>\`;
         }
 
         const contentWrapper = document.createElement("div");
@@ -286,12 +383,19 @@ export const htmlContent = `
         const contentDiv = document.createElement("div");
         contentDiv.className = "content";
         contentWrapper.appendChild(contentDiv);
+        
+        // Append Image at the end if exists
+        if(image) {
+            const imgDiv = document.createElement("div");
+            imgDiv.innerHTML = imageHtml;
+            contentWrapper.appendChild(imgDiv);
+        }
 
         div.innerHTML = \`<div class="avatar">\${avatar}</div>\`;
         div.appendChild(contentWrapper);
         chatBox.appendChild(div);
 
-        if (useTypingEffect && role === 'ai') {
+        if (useTypingEffect && role === 'ai' && actualMessage) {
             contentDiv.classList.add("typing-cursor");
             typeWriterEffect(contentDiv, actualMessage);
         } else {
@@ -340,12 +444,14 @@ export const htmlContent = `
 
     let loadingInterval;
     const loadingTexts = ["Membaca konteks...", "Menganalisis logika...", "Mencari referensi...", "Menyusun jawaban...", "Memvalidasi fakta..."];
-    
-    function startLoadingAnimation(element) {
+    const loadingImageTexts = ["Menyiapkan kanvas...", "Mengaduk piksel...", "Rendering FLUX...", "Polesan akhir..."];
+
+    function startLoadingAnimation(element, type) {
         let i = 0;
-        element.innerText = "Sedang berpikir...";
+        const texts = type === 'image' ? loadingImageTexts : loadingTexts;
+        element.innerText = type === 'image' ? "Generating Image..." : "Sedang berpikir...";
         loadingInterval = setInterval(() => {
-            element.innerText = loadingTexts[i % loadingTexts.length];
+            element.innerText = texts[i % texts.length];
             i++;
         }, 2000);
     }
@@ -359,11 +465,11 @@ export const htmlContent = `
 
         const loadingDiv = document.createElement("div");
         loadingDiv.className = "message ai"; loadingDiv.id = "loading";
-        loadingDiv.innerHTML = \`<div class="avatar"><i class="fas fa-robot"></i></div><div class="content" style="color:#aaa;"><span id="loading-text">Sedang berpikir...</span><span class="loading-dots"></span></div>\`;
+        loadingDiv.innerHTML = \`<div class="avatar"><i class="fas fa-robot"></i></div><div class="content" style="color:#aaa;"><span id="loading-text">Loading...</span><span class="loading-dots"></span></div>\`;
         document.getElementById("chat-box").appendChild(loadingDiv);
         document.getElementById("chat-box").scrollTop = document.getElementById("chat-box").scrollHeight;
 
-        startLoadingAnimation(document.getElementById("loading-text"));
+        startLoadingAnimation(document.getElementById("loading-text"), currentModel);
 
         const startTime = Date.now();
         const sessionToSend = currentSessionId;
@@ -371,7 +477,13 @@ export const htmlContent = `
         try {
             const response = await fetch(\`\${API_URL}/api\`, {
                 method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "chat", username: currentUser, sessionId: sessionToSend, prompt: text })
+                body: JSON.stringify({ 
+                    action: "chat", 
+                    username: currentUser, 
+                    sessionId: sessionToSend, 
+                    prompt: text,
+                    model: currentModel // Kirim tipe model yang dipilih
+                })
             });
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
             const data = await response.json();
