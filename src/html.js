@@ -67,7 +67,16 @@ export const htmlContent = `
         .content { line-height: 1.6; font-size: 0.95rem; word-wrap: break-word; }
         .content p { margin-top: 0; margin-bottom: 10px; }
         .content p:last-child { margin-bottom: 0; }
-        .content img { max-width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #444; }
+        .content img {
+            max-width: 400px; /* Batasi lebar maksimal */
+            max-height: 400px; /* Batasi tinggi maksimal */
+            width: auto;      /* Biarkan lebar menyesuaikan proporsi */
+            height: auto;     /* Biarkan tinggi menyesuaikan proporsi */
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #444;
+            cursor: pointer; /* Tambahkan kursor pointer agar terlihat bisa diklik (opsional) */
+        }
         
         .content pre { background: #0d1117; padding: 10px; border-radius: 8px; overflow-x: auto; margin: 10px 0; max-width: 100%; position: relative; }
         .copy-btn { position: absolute; top: 5px; right: 5px; background: #21262d; border: 1px solid #30363d; color: #c9d1d9; border-radius: 5px; padding: 4px 8px; font-size: 0.7rem; cursor: pointer; opacity: 0.7; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
