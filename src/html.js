@@ -68,43 +68,49 @@ export const htmlContent = `
         .content p { margin-top: 0; margin-bottom: 10px; }
         .content p:last-child { margin-bottom: 0; }
         
-        /* IMAGE PREVIEW STYLE */
+        /* --- FIX: IMAGE PREVIEW SMALLER (THUMBNAIL) --- */
         .content img { 
-            height: 180px; /* Tinggi fix biar rapi & kecil */
-            width: auto;   /* Lebar menyesuaikan */
+            max-height: 200px; /* Batas tinggi agar kecil */
+            max-width: 100%;   /* Agar tidak lewat layar HP */
+            width: auto;       /* Lebar menyesuaikan rasio */
+            display: block;
             border-radius: 8px; 
             margin-top: 10px; 
-            border: 1px solid #444; 
-            cursor: zoom-in; /* Cursor berubah jadi kaca pembesar */
-            transition: transform 0.2s ease;
-            object-fit: cover;
+            border: 2px solid #444; 
+            cursor: zoom-in;   /* Icon kaca pembesar */
+            transition: all 0.2s ease;
         }
         .content img:hover {
             transform: scale(1.02);
             border-color: var(--accent);
+            opacity: 0.9;
         }
 
-        /* LIGHTBOX / MODAL STYLE */
+        /* --- LIGHTBOX / MODAL STYLE --- */
         #image-modal {
             display: none;
             position: fixed;
-            z-index: 10000;
+            z-index: 99999;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
+            background-color: rgba(0, 0, 0, 0.95); /* Lebih gelap */
             justify-content: center;
             align-items: center;
             backdrop-filter: blur(5px);
+            cursor: zoom-out;
         }
         #image-modal.show { display: flex; animation: fadeIn 0.2s; }
+        
+        /* Gambar di dalam Modal (Full Size) */
         #image-modal img {
-            max-width: 90vw;
-            max-height: 90vh;
-            border-radius: 5px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            cursor: zoom-out;
+            max-width: 95vw; /* Hampir full layar */
+            max-height: 95vh;
+            border-radius: 4px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.7);
+            cursor: default;
+            object-fit: contain;
         }
         
         .content pre { background: #0d1117; padding: 10px; border-radius: 8px; overflow-x: auto; margin: 10px 0; max-width: 100%; position: relative; }
