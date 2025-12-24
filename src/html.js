@@ -69,16 +69,18 @@ export const htmlContent = `
         .content p:last-child { margin-bottom: 0; }
         
         /* --- FIX: IMAGE PREVIEW SMALLER (THUMBNAIL) --- */
+        /* Kita paksa dengan !important agar tidak tertimpa style lain */
         .content img { 
-            max-height: 200px; /* Batas tinggi agar kecil */
-            max-width: 100%;   /* Agar tidak lewat layar HP */
-            width: auto;       /* Lebar menyesuaikan rasio */
+            max-height: 180px !important; /* Paksa tinggi maksimal */
+            width: auto !important;       /* Lebar menyesuaikan rasio */
+            max-width: 100%;              /* Jangan lebih lebar dari chat bubble */
             display: block;
             border-radius: 8px; 
             margin-top: 10px; 
             border: 2px solid #444; 
-            cursor: zoom-in;   /* Icon kaca pembesar */
+            cursor: zoom-in;   
             transition: all 0.2s ease;
+            object-fit: contain; /* Pastikan gambar tidak gepeng */
         }
         .content img:hover {
             transform: scale(1.02);
@@ -95,7 +97,7 @@ export const htmlContent = `
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.95); /* Lebih gelap */
+            background-color: rgba(0, 0, 0, 0.95);
             justify-content: center;
             align-items: center;
             backdrop-filter: blur(5px);
@@ -103,10 +105,11 @@ export const htmlContent = `
         }
         #image-modal.show { display: flex; animation: fadeIn 0.2s; }
         
-        /* Gambar di dalam Modal (Full Size) */
         #image-modal img {
-            max-width: 95vw; /* Hampir full layar */
-            max-height: 95vh;
+            max-width: 95vw !important;
+            max-height: 95vh !important;
+            width: auto !important;
+            height: auto !important;
             border-radius: 4px;
             box-shadow: 0 0 50px rgba(0,0,0,0.7);
             cursor: default;
@@ -126,41 +129,15 @@ export const htmlContent = `
         .send-btn { background: var(--accent); border: none; border-radius: 50%; width: 35px; height: 35px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .send-btn:disabled { background: #444; }
         
-        /* MODEL SELECTOR */
         .model-select {
-            background: transparent;
-            color: #aaa;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 5px;
-            margin-right: 5px;
-            transition: color 0.3s;
+            background: transparent; color: #aaa; border: none; font-size: 1.2rem; cursor: pointer; padding: 5px; margin-right: 5px; transition: color 0.3s;
         }
         .model-select:hover { color: white; }
         .model-dropdown {
-            position: absolute;
-            bottom: 60px;
-            left: 10px;
-            background: #252525;
-            border: 1px solid #444;
-            border-radius: 8px;
-            overflow: hidden;
-            display: none;
-            flex-direction: column;
-            width: 150px;
-            z-index: 100;
+            position: absolute; bottom: 60px; left: 10px; background: #252525; border: 1px solid #444; border-radius: 8px; overflow: hidden; display: none; flex-direction: column; width: 150px; z-index: 100;
         }
         .model-dropdown.show { display: flex; }
-        .model-option {
-            padding: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.9rem;
-            color: #ccc;
-        }
+        .model-option { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: #ccc; }
         .model-option:hover { background: #333; color: white; }
         .model-option.active { background: var(--accent); color: white; }
 
@@ -247,7 +224,6 @@ export const htmlContent = `
     let currentSessionId = initialSession;
     let currentModel = 'text';
 
-    // --- MODAL LOGIC ---
     function openImageModal(src) {
         const modal = document.getElementById('image-modal');
         const modalImg = document.getElementById('modal-img');
@@ -258,7 +234,6 @@ export const htmlContent = `
         document.getElementById('image-modal').classList.remove('show');
     }
 
-    // --- MODEL SELECTOR LOGIC ---
     function toggleModelDropdown() {
         document.getElementById('model-dropdown').classList.toggle('show');
     }
@@ -375,7 +350,6 @@ export const htmlContent = `
     const userInput = document.getElementById("user-input");
     userInput.addEventListener("keydown", function(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
 
-    // --- PARSING ---
     function parseMessageContent(text) {
         const thoughtRegex = /\\[(THOUGHT|OUGHT|REASONING)\\]([\\s\\S]*?)\\[\\/\\1\\]/i;
         const imageRegex = /\\[GENERATED_IMAGE\\]([\\s\\S]*?)\\[\\/GENERATED_IMAGE\\]/i;
@@ -422,9 +396,10 @@ export const htmlContent = `
         }
 
         if (image) {
+            // FIX: Inline Style untuk memaksa gambar kecil saat di-render
             imageHtml = \`
                 <div>
-                    <img src="\${image}" onclick="openImageModal(this.src)" alt="Generated Image" title="Klik untuk memperbesar">
+                    <img src="\${image}" onclick="openImageModal(this.src)" alt="Generated Image" title="Klik untuk memperbesar" style="max-height: 180px; width: auto; border-radius: 8px; cursor: zoom-in; margin-top: 10px; border: 2px solid #444;">
                     <br>
                     <a href="\${image}" download="flux-image.png" style="font-size:0.8rem; color:#aaa; text-decoration:none; margin-top:5px; display:inline-block;">
                         <i class="fas fa-download"></i> Download HD
