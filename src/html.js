@@ -67,15 +67,44 @@ export const htmlContent = `
         .content { line-height: 1.6; font-size: 0.95rem; word-wrap: break-word; }
         .content p { margin-top: 0; margin-bottom: 10px; }
         .content p:last-child { margin-bottom: 0; }
-        .content img {
-            max-width: 400px; /* Batasi lebar maksimal */
-            max-height: 400px; /* Batasi tinggi maksimal */
-            width: auto;      /* Biarkan lebar menyesuaikan proporsi */
-            height: auto;     /* Biarkan tinggi menyesuaikan proporsi */
-            border-radius: 8px;
-            margin-top: 10px;
-            border: 1px solid #444;
-            cursor: pointer; /* Tambahkan kursor pointer agar terlihat bisa diklik (opsional) */
+        
+        /* IMAGE PREVIEW STYLE */
+        .content img { 
+            height: 180px; /* Tinggi fix biar rapi & kecil */
+            width: auto;   /* Lebar menyesuaikan */
+            border-radius: 8px; 
+            margin-top: 10px; 
+            border: 1px solid #444; 
+            cursor: zoom-in; /* Cursor berubah jadi kaca pembesar */
+            transition: transform 0.2s ease;
+            object-fit: cover;
+        }
+        .content img:hover {
+            transform: scale(1.02);
+            border-color: var(--accent);
+        }
+
+        /* LIGHTBOX / MODAL STYLE */
+        #image-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        #image-modal.show { display: flex; animation: fadeIn 0.2s; }
+        #image-modal img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 5px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            cursor: zoom-out;
         }
         
         .content pre { background: #0d1117; padding: 10px; border-radius: 8px; overflow-x: auto; margin: 10px 0; max-width: 100%; position: relative; }
@@ -89,6 +118,7 @@ export const htmlContent = `
         .input-container { background: var(--bg-input); border-radius: 20px; padding: 8px 15px; display: flex; align-items: flex-end; gap: 10px; border: 1px solid #444; position: relative; }
         textarea { width: 100%; background: transparent; border: none; color: white; resize: none; font-family: inherit; font-size: 1rem; max-height: 120px; height: 24px; padding: 5px 0; outline: none; }
         .send-btn { background: var(--accent); border: none; border-radius: 50%; width: 35px; height: 35px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .send-btn:disabled { background: #444; }
         
         /* MODEL SELECTOR */
         .model-select {
@@ -195,6 +225,10 @@ export const htmlContent = `
         </main>
     </div>
 
+    <div id="image-modal" onclick="closeImageModal()">
+        <img id="modal-img" src="" alt="Full View">
+    </div>
+
 <script>
     const API_URL = window.location.origin;
     const pathParts = window.location.pathname.split('/').filter(p => p);
@@ -205,7 +239,18 @@ export const htmlContent = `
     }
     let currentUser = initialUser;
     let currentSessionId = initialSession;
-    let currentModel = 'text'; // 'text' or 'image'
+    let currentModel = 'text';
+
+    // --- MODAL LOGIC ---
+    function openImageModal(src) {
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-img');
+        modalImg.src = src;
+        modal.classList.add('show');
+    }
+    function closeImageModal() {
+        document.getElementById('image-modal').classList.remove('show');
+    }
 
     // --- MODEL SELECTOR LOGIC ---
     function toggleModelDropdown() {
@@ -216,17 +261,13 @@ export const htmlContent = `
         const icon = type === 'text' ? 'fas fa-comment-alt' : 'fas fa-image';
         document.getElementById('current-model-icon').className = icon;
         
-        // Update Active Class
         document.querySelectorAll('.model-option').forEach(el => el.classList.remove('active'));
         if(type === 'text') document.querySelectorAll('.model-option')[0].classList.add('active');
         else document.querySelectorAll('.model-option')[1].classList.add('active');
 
-        // Update Placeholder
         document.getElementById('user-input').placeholder = type === 'text' ? "Ketik pesan..." : "Deskripsikan gambar...";
-        
         document.getElementById('model-dropdown').classList.remove('show');
     }
-    // Close dropdown if clicked outside
     window.onclick = function(event) {
         if (!event.target.matches('.model-select') && !event.target.matches('.model-select *')) {
             document.getElementById('model-dropdown').classList.remove('show');
@@ -337,17 +378,15 @@ export const htmlContent = `
         let image = null;
         let actualMessage = text;
 
-        // Extract Thought
         const thoughtMatch = text.match(thoughtRegex);
         if (thoughtMatch) {
             thought = thoughtMatch[2].trim();
             actualMessage = actualMessage.replace(thoughtRegex, "").trim();
         }
 
-        // Extract Image
         const imageMatch = text.match(imageRegex);
         if (imageMatch) {
-            image = imageMatch[1].trim(); // Base64 data
+            image = imageMatch[1].trim(); 
             actualMessage = actualMessage.replace(imageRegex, "").trim();
         }
 
@@ -364,7 +403,6 @@ export const htmlContent = `
         const avatar = role === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
         let metaHtml = (role === 'ai' && duration > 0) ? \`<div class="meta-info"><i class="fas fa-stopwatch"></i> \${duration}s</div>\` : "";
 
-        // Parse content
         const { thought, image, actualMessage } = parseMessageContent(text);
         let thoughtHtml = "";
         let imageHtml = "";
@@ -380,8 +418,11 @@ export const htmlContent = `
         if (image) {
             imageHtml = \`
                 <div>
-                    <img src="\${image}" alt="Generated Image">
-                    <br><a href="\${image}" download="flux-image.png" style="font-size:0.8rem; color:#aaa; text-decoration:none;"><i class="fas fa-download"></i> Download Image</a>
+                    <img src="\${image}" onclick="openImageModal(this.src)" alt="Generated Image" title="Klik untuk memperbesar">
+                    <br>
+                    <a href="\${image}" download="flux-image.png" style="font-size:0.8rem; color:#aaa; text-decoration:none; margin-top:5px; display:inline-block;">
+                        <i class="fas fa-download"></i> Download HD
+                    </a>
                 </div>\`;
         }
 
@@ -393,7 +434,6 @@ export const htmlContent = `
         contentDiv.className = "content";
         contentWrapper.appendChild(contentDiv);
         
-        // Append Image at the end if exists
         if(image) {
             const imgDiv = document.createElement("div");
             imgDiv.innerHTML = imageHtml;
@@ -491,7 +531,7 @@ export const htmlContent = `
                     username: currentUser, 
                     sessionId: sessionToSend, 
                     prompt: text,
-                    model: currentModel // Kirim tipe model yang dipilih
+                    model: currentModel
                 })
             });
             const duration = ((Date.now() - startTime) / 1000).toFixed(1);
